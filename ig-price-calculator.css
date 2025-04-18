@@ -1,0 +1,322 @@
+.ig-calculator {
+  width: 600px;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 60px;
+  background: #D83659;
+  color: white;
+  position: relative;
+  box-sizing: border-box;
+}
+h2.ig-calculator-heading {
+  color: white;
+  font-size: 32px;
+  margin-top: 0;
+  margin-bottom: 32px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+.ig-calculator-form {
+  display: flex;
+  flex-direction: column;
+  width: 70%;
+}
+input.ig-calculator-input {
+  border: none;
+  outline: none;
+  padding: 14px 20px;
+  font-size: 16px;
+  border-radius: 2px;
+}
+.ig-calculator-button {
+  border-radius: 2px;
+  border: none;
+  background: #7cbf75;
+  display: inline-block;
+  padding: 10px 20px;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 16px;
+  transition: .15s all;
+  border: none;
+  box-shadow: 0 0 3px rgba(69, 55, 55, 0.4);
+  text-align: center;
+  user-select: none;
+}
+.ig-calculator-button:hover {
+  background: #6ace6c;
+  box-shadow: 0 0 3px rgba(216, 210, 210, 0.4);
+  transform: scale(0.98);
+}
+.ig-calculator-button:active {
+  background: #6ace6c;
+  box-shadow: 0 0 3px rgba(216, 210, 210, 0.4);
+  transform: scale(0.96);
+}
+.ig-calculator-loader {
+  padding: 8px;
+  font-size: 16px;
+}
+.ig-calculator-fade {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+.ig-calculator-show {
+  opacity: 1;
+}
+.ig-calculator-result {
+  margin-top: 20px;
+}
+#ig-calculator-dynamic-block,
+#ig-calculator-loader {
+  min-height: 60px;
+  width: 100%;
+}
+.ig-calculator-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  font-family: inherit;
+}
+a.ig-calculator-profile-link {
+  font-size: 18px;
+  color: white!important;
+  text-decoration: none;
+  margin-bottom: 8px;
+  line-height: 18px;
+  border-bottom: 2px solid transparent;
+  transition: .14s;
+}
+a.ig-calculator-profile-link:hover {
+  border-bottom-color: white;
+}
+.ig-calculator-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 50px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+.ig-calculator-profile-header img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+}
+.ig-calculator-profile-header-item {
+  text-align: center;
+  min-width: 80px;
+}
+ul.ig-calculator-metrics-list {
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+  align-items: center;
+}
+li.ig-calculator-metrics-item {
+  list-style: none;
+  font-size: 14px;
+}
+.ig-calculator-profile-header-item-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+}
+.ig-calculator-profile-header-item-label {
+  font-size: 13px;
+  color: #eee;
+}
+.ig-calculator-valuation {
+  font-size: 32px;
+  font-weight: bold;
+  color: white;
+}
+.ig-calculator-valuation-title {
+  font-size: 14px;
+  color: white;
+  font-weight: 300;
+  width: 90%;
+  margin-bottom: 0;
+  margin-top: 0;
+  margin-right: auto;
+  margin-left: auto;
+  text-align: center;
+}
+.ig-calculator-stat {
+  text-align: center;
+  position: relative;
+  margin-top: 24px;
+}
+.ig-calculator-stat .value {
+  font-weight: bold;
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+.ig-calculator-stat .label {
+  font-size: 14px;
+}
+.ig-calculator-stat-block {
+  display: flex;
+  flex-direction: column;
+  margin-top: 24px;
+  gap: 32px;
+  position: relative;
+  color: white;
+  align-items: center;
+}
+.ig-calculator-metrics-subtext {
+  font-size: 14px;
+  font-weight: 300;
+  text-align: center;
+  width: 90%;
+  margin: 0 auto;
+}
+.ig-calculator-stat .value {
+  font-weight: bold;
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+.ig-calculator-stat .label {
+  font-size: 14px;
+  color: #eee;
+}.ig-calculator-blurred-metrics {
+  position: relative;
+  width: 100%;
+  width: 400px;
+  overflow: hidden;
+  height: 190px;
+}
+ul.ig-calculator-blurred-list {
+  filter: blur(3px);
+  opacity: 0.6;
+  background: rgba(216, 54, 89, 0.26);
+  text-align: center;
+  font-size: 14px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  margin: 0 0 160px 0;
+}
+.margin-auto{
+  margin-left: auto;
+  margin-right: auto ;
+}
+.ig-calculator-blur-overlay {
+  position: absolute;
+  width: 80%;
+  margin: 0 auto;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  bottom: 60px;
+}
+.ig-calculator-terms-checkbox {
+  font-size: 14px;
+  align-self: flex-start;
+}
+.ig-calculator-terms-checkbox a {
+  text-decoration: underline;
+  color: white!important;
+}
+.ig-calculator-form-status {
+  margin-top: 16px;
+  margin-bottom: 0;
+  font-size: 14px;
+}
+h4.ig-calculator-blur-heading {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0 auto 16px;
+  color: white;
+  text-shadow: 0 0 3px rgba(98, 79, 79, 0.3);
+}
+.value-with-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-direction: column;
+  margin-top: 24px;
+}
+.value-with-info .info {
+  font-size: 14px;
+  font-weight: 400;
+}
+.info-icon-wrapper {
+  position: relative;
+}
+.info-icon {
+  width: 16px;
+  height: 16px;
+  top: -1px;
+  z-index: 2;
+  position: absolute;
+}
+@media (max-width: 768px) {
+  .ig-calculator {
+      width: 100%;
+      padding: 20px 40px;
+  }
+  h2.ig-calculator-heading {
+      font-size: 27px;
+      margin-bottom: 24px;
+  }
+  .ig-calculator-form {
+      width: 100%;
+  }
+  .ig-calculator-button {
+    margin-top: 8px;
+  }
+  .ig-calculator-profile-header {
+    width: 80%;
+    justify-content: space-between;
+    gap: 0;
+  }
+}
+@media (max-width: 375px) {
+  .ig-calculator {
+    padding: 10px 20px;
+  }
+  .ig-calculator-button {
+    max-width: auto;
+    text-align: center;
+    font-size: 14px;
+    padding: 10px;
+  }
+  h4.ig-calculator-blur-heading {
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  .ig-calculator-terms-checkbox {
+    font-size: 12px;
+  }
+  li.ig-calculator-metrics-item {
+    font-size: 12px;
+  }
+  .ig-calculator-metrics-subtext {
+    width: 100%;
+    font-size: 12px;
+  }
+  .ig-calculator-stat-block {
+    gap: 24px;
+    margin-top: 16px;
+  }
+  .ig-calculator-valuation {
+    font-size: 28px;
+  }
+  .ig-calculator-valuation-title {
+    width: 100%;
+  }
+}
