@@ -20,7 +20,7 @@ h2.ig-calculator-heading {
 .ig-calculator-form {
   display: flex;
   flex-direction: column;
-  width: 70%;
+  width: 85%;
 }
 input.ig-calculator-input {
   border: none;
@@ -285,19 +285,24 @@ h4.ig-calculator-blur-heading {
     gap: 0;
   }
 }
-@media (max-width: 375px) {
+@media (max-width: 492px) {
   .ig-calculator {
     padding: 10px 20px;
-  }
-  .ig-calculator-button {
-    max-width: auto;
-    text-align: center;
-    font-size: 14px;
-    padding: 10px;
   }
   h4.ig-calculator-blur-heading {
     font-size: 18px;
     margin-bottom: 8px;
+  }
+}
+@media (max-width: 375px) {
+  .ig-calculator-button {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 10px 5px;
+  }
+  input.ig-calculator-input {
+    padding: 10px;
   }
   .ig-calculator-terms-checkbox {
     font-size: 12px;
@@ -318,5 +323,11 @@ h4.ig-calculator-blur-heading {
   }
   .ig-calculator-valuation-title {
     width: 100%;
+  }
+  .ig-calculator-blur-overlay{
+    bottom: 30px;
+  }
+  ul.ig-calculator-blurred-list {
+    margin: 0 0 80px 0;
   }
 }

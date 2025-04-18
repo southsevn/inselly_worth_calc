@@ -176,11 +176,11 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
     statsWrapper.appendChild(blurred);
 
-    statsWrapper.appendChild(renderLeadForm(data.initalRequestId));
+    statsWrapper.appendChild(renderLeadForm(data.initalRequestId, data.socialAccountId));
     container.appendChild(statsWrapper);
   }
 
-  function renderLeadForm(initalRequestId) {
+  function renderLeadForm(initalRequestId, socialAccountId) {
     const overlay = document.createElement("div");
     overlay.className = "ig-calculator-blur-overlay";
 
@@ -228,7 +228,7 @@ document.addEventListener("DOMContentLoaded", function () {
       fetch("https://eightception.app.n8n.cloud/webhook/0d489abf-c0b5-4d01-8994-50ce85747b77", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, initalRequestId })
+        body: JSON.stringify({ email, initalRequestId, socialAccountId })
       })
         .then((res) => {
           if (res.ok) {
