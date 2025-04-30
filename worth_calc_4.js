@@ -283,18 +283,25 @@ document.addEventListener("DOMContentLoaded", function () {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, initalRequestId, socialAccountId })
       })
-        .then((res) => {
-          if (res.ok) {
+        .then(res => res.json())
+        .then((data) => {
+          if (data.error) {
+            status.textContent = data.error;
+            input.disabled = true;
+            checkbox.disabled = true;
+            button.remove();
+          } else if (data.message) {
             status.textContent = "Thanks! We'll be in touch soon.";
             input.disabled = true;
             button.remove();
             clearStorage();
-          } else throw new Error();
+          }
         })
-        .catch(() => {
+        .catch((err) => {
           status.textContent = "Something went wrong. Try again.";
           button.textContent = "Get FREE Instagram Valuation";
           button.style.pointerEvents = "auto";
+          console.error(err);
         });
     });
 
