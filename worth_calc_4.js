@@ -19,70 +19,93 @@ const jokesStage2 = [
   "Estimating influence per pixel..."
 ];
 
+const MAX_ATTEMPTS = 3;
+const ATTEMPT_KEY = 'insellyAttempts';
+const ATTEMPT_DATE_KEY = 'insellyAttemptsStart';
+const EXPIRY_DAYS = 7;
+
+
+let loaderInterval;
+
+let attempts = parseInt(localStorage.getItem(ATTEMPT_KEY)) || 0;
+let startDate = parseInt(localStorage.getItem(ATTEMPT_DATE_KEY)) || null;
+
+const now = Date.now();
+const daysSince = startDate ? (now - startDate) / (1000 * 60 * 60 * 24) : null;
+
 document.addEventListener("DOMContentLoaded", function () {
-  const container = document.getElementById("ig-calculator-dynamic-block");
+  const refInput = document.getElementById("form-referrer");
+  const input = document.getElementById("ig-calculator-username");
+  const button = document.getElementById("ig-calculator-submit");
+  const resultContainer = document.getElementById("ig-calculator-result");
+  const form = document.querySelector(".ig-calculator-form");
 
-  let loaderInterval;
-
-  function clearContainer() {
-    while (container.firstChild) container.removeChild(container.firstChild);
+  if (refInput) {
+    refInput.value = document.referrer;
   }
 
-  function createForm() {
-    clearContainer();
-    const wrapper = document.createElement("div");
-    wrapper.className = "ig-calculator-form";
-
-    const input = document.createElement("input");
-    input.className = "ig-calculator-input";
-    input.id = "ig-calculator-username";
-    input.type = "text";
-    input.placeholder = "@john.doe or https://instagram.com/john.doe";
-
-    const button = document.createElement("div");
-    button.className = "ig-calculator-button";
-    button.id = "ig-calculator-submit";
-    button.textContent = "Calculate Instagram Worth";
-
-    const result = document.createElement("div");
-    result.className = "ig-calculator-result";
-    result.id = "ig-calculator-result";
-
-    wrapper.appendChild(input);
-    wrapper.appendChild(button);
-    wrapper.appendChild(result);
-    container.appendChild(wrapper);
-
-    button.addEventListener("click", () => handleSubmit(input.value.trim()));
+  if (startDate && daysSince > EXPIRY_DAYS) {
+    attempts = 0;
+    clearStorage();
   }
+
+  button.addEventListener("click", () => {
+    if (attempts >= MAX_ATTEMPTS) {
+      if (form) form.remove();
+
+      resultContainer.innerHTML = `
+        <h4 class="ig-calculator-blur-heading text-align-center">You’ve reached the free limit</h4>
+        <p class="ig-calculator-metrics-subtext">Come back in a few days or enter your email below to unlock more reports.</p>
+      `;
+      resultContainer.appendChild(
+        renderLeadForm(null, null)
+      );
+      return;
+    }
+
+    const username = extractUsername(input.value.trim());
+    if (!username) {
+      resultContainer.textContent = "Invalid username format";
+      return;
+    }
+
+    if (!startDate) {
+      localStorage.setItem(ATTEMPT_DATE_KEY, now.toString());
+    }
+
+    attempts += 1;
+    localStorage.setItem(ATTEMPT_KEY, attempts.toString());
+
+    handleSubmit(username);
+  });
 
   function showLoader(jokes) {
-    const loaderWrapper = document.createElement("div");
-    loaderWrapper.id = "ig-calculator-loader";
-    loaderWrapper.className = "ig-calculator-loader";
+    const wrapper = document.createElement("div");
+    wrapper.className = "ig-calculator-loader";
 
-    const loaderText = document.createElement("span");
-    loaderText.id = "ig-calculator-loader-text";
-    loaderText.className = "ig-calculator-show";
-    loaderText.textContent = jokes[0];
+    const text = document.createElement("span");
+    text.id = "ig-calculator-loader-text";
+    text.className = "ig-calculator-show";
+    text.textContent = jokes[0];
 
-    loaderWrapper.appendChild(loaderText);
-    container.appendChild(loaderWrapper);
-    startLoader(loaderText, jokes);
+    wrapper.appendChild(text);
+    resultContainer.appendChild(wrapper);
+
+    startLoader(text, jokes);
   }
 
-  function startLoader(textEl, jokes) {
-    let previousIndex = -1;
+  function startLoader(el, jokes) {
+    let prev = -1;
     loaderInterval = setInterval(() => {
-      textEl.classList.remove("ig-calculator-show");
+      el.classList.remove("ig-calculator-show");
       setTimeout(() => {
-        let index;
+        let i;
         do {
-          index = Math.floor(Math.random() * jokes.length);
-        } while (index === previousIndex);
-        previousIndex = index;
-        textEl.textContent = jokes[index];
-        textEl.classList.add("ig-calculator-show");
+          i = Math.floor(Math.random() * jokes.length);
+        } while (i === prev);
+        prev = i;
+        el.textContent = jokes[i];
+        el.classList.add("ig-calculator-show");
       }, 300);
     }, 2500);
   }
@@ -92,8 +115,56 @@ document.addEventListener("DOMContentLoaded", function () {
     loaderInterval = null;
   }
 
+  function extractUsername(input) {
+    const urlMatch = input.match(/(?:https?:\/\/)?(?:www\.)?instagram\.com\/@?([a-zA-Z0-9._]{1,30})/i);
+    const unameMatch = input.match(/^@?([a-zA-Z0-9._]{1,30})$/);
+    if (urlMatch) return urlMatch[1].replace(/^@/, "").trim();
+    if (unameMatch) return unameMatch[1].trim();
+    return "";
+  }
+
+  function handleSubmit(username) {
+    const form = document.querySelector(".ig-calculator-form");
+    if (form) form.remove();
+    resultContainer.innerHTML = "";
+    showLoader(jokesStage1);
+
+    fetch(`https://eightception.app.n8n.cloud/webhook/068d22da-80c2-4047-8275-08c8db1f3fb3?username=${encodeURIComponent(username)}&referrer=${refInput.value}`)
+      .then(async res => {
+        const raw = await res.text();
+        if (!res.ok) throw new Error(`Stage 1 error: ${res.status} - ${raw}`);
+        return JSON.parse(raw);
+      })
+      .then(data => {
+        stopLoader();
+        renderHeader(data);
+        showLoader(jokesStage2);
+
+        fetch(`https://eightception.app.n8n.cloud/webhook/f83d85f9-7b2d-4b87-8bd1-aae76ea04efa?account_id=${data.socialAccountId}&request_id=${data.initalRequestId}&scraped_at=${data.scrapedAt}`)
+          .then(async res => {
+            const raw = await res.text();
+            if (!res.ok) throw new Error(`Stage 2 error: ${res.status} - ${raw}`);
+            return JSON.parse(raw);
+          })
+          .then(finalData => {
+            stopLoader();
+            renderHeader(finalData);
+            renderFinalStats(finalData);
+          })
+          .catch((err) => {
+            stopLoader();
+            console.error(err);
+            resultContainer.textContent = "Something went wrong. Try again.";
+          });
+      })
+      .catch((err) => {
+        stopLoader();
+        console.error(err);
+        resultContainer.textContent = "Something went wrong during account lookup.";
+      });
+  }
+
   function renderHeader(data) {
-    clearContainer();
     const wrapper = document.createElement("div");
     wrapper.className = "ig-calculator-profile";
 
@@ -109,90 +180,72 @@ document.addEventListener("DOMContentLoaded", function () {
     const avatar = document.createElement("img");
     avatar.src = data.image?.[0]?.url || "";
     avatar.alt = "Profile picture";
-    header.appendChild(avatar);
 
+    header.appendChild(avatar);
     header.appendChild(makeStat(data.postsQty, "posts"));
     header.appendChild(makeStat(data.followers, "followers"));
 
     wrapper.appendChild(link);
     wrapper.appendChild(header);
-    container.appendChild(wrapper);
+    resultContainer.innerHTML = "";
+    resultContainer.appendChild(wrapper);
+  }
+
+  function renderFinalStats(data) {
+    const block = document.createElement("div");
+    block.className = "ig-calculator-stat-block";
+    block.innerHTML = `
+      <p class="ig-calculator-valuation-title">Based on recent posts, the Instagram account worth can be around</p>
+      <data class="ig-calculator-valuation" value="${data.accountValue}">${formatUSD(data.accountValue)}</data>
+      <ul class="ig-calculator-metrics-list">
+        <li class="ig-calculator-metrics-item">Potential Passive Income: <strong>${formatUSD(data.mounthlyIncome)}/month</strong></li>
+        <li class="ig-calculator-metrics-item">Engaged Followers Rate: <strong>${formatPercent(data.engagedFollowers)}</strong></li>
+        <li class="ig-calculator-metrics-item">Video Engagement Rate: <strong>${formatPercent(data.videoEngagement)}</strong></li>
+      </ul>
+      <p class="ig-calculator-metrics-subtext">Inselly AI is analyzing all your posts, your niche, and competitors to reveal better insights.</p>
+      <ul class="ig-calculator-blurred-list">
+        <li class="ig-calulator-stats-item">Average Engagement Rate in Your Niche: 🔒</li>
+        <li class="ig-calulator-stats-item">Expected Account Value in 6 months: 🔒</li>
+        <li class="ig-calulator-stats-item">Optimal Number of Promo Posts per Month: 🔒</li>
+        <li class="ig-calulator-stats-item">Recommended Price of Promo Post on Account: 🔒</li>
+      </ul>
+    `;
+    resultContainer.appendChild(block);
+    block.appendChild(renderOverlay(data.initalRequestId, data.socialAccountId));
   }
 
   function makeStat(value, label) {
     const block = document.createElement("div");
     block.className = "ig-calculator-profile-header-item";
-
-    const val = document.createElement("div");
-    val.className = "ig-calculator-profile-header-item-value";
-    val.textContent = formatNumber(value);
-
-    const lbl = document.createElement("div");
-    lbl.className = "ig-calculator-profile-header-item-label";
-    lbl.textContent = label;
-
-    block.appendChild(val);
-    block.appendChild(lbl);
+    block.innerHTML = `
+      <div class="ig-calculator-profile-header-item-value">${formatNumber(value)}</div>
+      <div class="ig-calculator-profile-header-item-label">${label}</div>
+    `;
     return block;
   }
 
-  function renderFinalStats(data) {
-    const statsWrapper = document.createElement("div");
-    statsWrapper.className = "ig-calculator-stat-block";
-
-    const title = document.createElement("p");
-    title.className = "ig-calculator-valuation-title";
-    title.textContent = "Based on recent posts, the Instagram account worth can be around";
-    statsWrapper.appendChild(title);
-
-    const value = document.createElement("data");
-    value.className = "ig-calculator-valuation";
-    value.value = data.accountValue;
-    value.textContent = formatUSD(data.accountValue);
-    statsWrapper.appendChild(value);
-
-    const list = document.createElement("ul");
-    list.className = "ig-calculator-metrics-list";
-
-    list.innerHTML = `
-      <li class="ig-calculator-metrics-item">Potential Passive Income: <strong>${formatUSD(data.mounthlyIncome)}/month</strong></li>
-      <li class="ig-calculator-metrics-item">Engaged Followers Rate: <strong>${formatPercent(data.engagedFollowers)}</strong></li>
-      <li class="ig-calculator-metrics-item">Video Engagement Rate: <strong>${formatPercent(data.videoEngagement)}</strong></li>
-    `;
-    statsWrapper.appendChild(list);
-
-    const outro = document.createElement("p");
-    outro.className = "ig-calculator-metrics-subtext";
-    outro.textContent = "Inselly AI is analyzing all your posts, your niche, and competitors to reveal better insights.";
-    statsWrapper.appendChild(outro);
-
-    const blurred = document.createElement("ul");
-    blurred.className = "ig-calculator-blurred-list";
-    blurred.innerHTML = `
-      <li class="ig-calulator-stats-item">Average Engagement Rate in Your Niche: 🔒</li>
-      <li class="ig-calulator-stats-item">Expected Account Value in 6 months: 🔒</li>
-      <li class="ig-calulator-stats-item">Optimal Number of Promo Posts per Month: 🔒</li>
-      <li class="ig-calulator-stats-item">Recommended Price of Promo Post on Account: 🔒</li>
-    `;
-    statsWrapper.appendChild(blurred);
-
-    statsWrapper.appendChild(renderLeadForm(data.initalRequestId, data.socialAccountId));
-    container.appendChild(statsWrapper);
-  }
-
-  function renderLeadForm(initalRequestId, socialAccountId) {
+  function renderOverlay(initalRequestId, socialAccountId) {
     const overlay = document.createElement("div");
     overlay.className = "ig-calculator-blur-overlay";
-
+  
     const title = document.createElement("h4");
     title.className = "ig-calculator-blur-heading";
     title.textContent = "Want to see more stats?";
 
+    const form = renderLeadForm(initalRequestId, socialAccountId);
+  
+    overlay.appendChild(title);
+    overlay.appendChild(form);
+  
+    return overlay;
+  }
+
+  function renderLeadForm(initalRequestId, socialAccountId) {
     const input = document.createElement("input");
     input.type = "email";
     input.placeholder = "Your email";
     input.className = "ig-calculator-input";
-
+  
     const checkbox = document.createElement("label");
     checkbox.className = "ig-calculator-terms-checkbox";
     checkbox.innerHTML = `
@@ -200,31 +253,31 @@ document.addEventListener("DOMContentLoaded", function () {
       I agree with the <a href="https://inselly.com/terms-and-conditions/" target="_blank">Terms</a> and
       <a href="https://inselly.com/privacy-policy/" target="_blank">Privacy Policy</a>.
     `;
-
+  
     const button = document.createElement("div");
     button.className = "ig-calculator-button";
     button.textContent = "Get FREE Instagram Valuation";
-
+  
     const status = document.createElement("p");
     status.className = "ig-calculator-form-status";
-
+  
     button.addEventListener("click", () => {
       const email = input.value.trim();
       const agreed = document.getElementById("agreeTerms")?.checked;
-
+  
       if (!email.includes("@")) {
         status.textContent = "Please enter a valid email.";
         return;
       }
-
+  
       if (!agreed) {
         status.textContent = "You must accept the terms.";
         return;
       }
-
+  
       button.textContent = "Sending...";
       button.style.pointerEvents = "none";
-
+  
       fetch("https://eightception.app.n8n.cloud/webhook/0d489abf-c0b5-4d01-8994-50ce85747b77", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -235,6 +288,7 @@ document.addEventListener("DOMContentLoaded", function () {
             status.textContent = "Thanks! We'll be in touch soon.";
             input.disabled = true;
             button.remove();
+            clearStorage();
           } else throw new Error();
         })
         .catch(() => {
@@ -244,108 +298,34 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    overlay.appendChild(title);
-    overlay.appendChild(input);
-    overlay.appendChild(checkbox);
-    overlay.appendChild(button);
-    overlay.appendChild(status);
+    const form = document.createElement("div");
+    form.className = "ig-calculator-lead-form";
+    form.appendChild(input);
+    form.appendChild(checkbox);
+    form.appendChild(button);
+    form.appendChild(status);
 
-    return overlay;
+    return form;
   }
 
-  function showResult(data) {
-    if (!data) {
-      return;
-    }
-    stopLoader();
-    renderHeader(data);
-    renderFinalStats(data);
+  function clearStorage() {
+    localStorage.removeItem(ATTEMPT_KEY);
+    localStorage.removeItem(ATTEMPT_DATE_KEY);
   }
 
-  function extractUsername(input) {
-    const urlRegex = /(?:https?:\/\/)?(?:www\.)?instagram\.com\/@?([a-zA-Z0-9._]{1,30})/i;
-    const usernameRegex = /^@?([a-zA-Z0-9._]{1,30})$/;
-    const urlMatch = input.match(urlRegex);
-    if (urlMatch) return urlMatch[1].replace(/^@/, "").trim();
-    const unameMatch = input.match(usernameRegex);
-    if (unameMatch) return unameMatch[1].trim();
-    return "";
+  function formatNumber(val) {
+    if (val >= 1_000_000) return (val / 1_000_000).toFixed(1).replace(/\.0$/, '') + "m";
+    if (val >= 1_000) return (val / 1_000).toFixed(1).replace(/\.0$/, '') + "k";
+    return val.toString();
   }
 
-  function handleSubmit(rawInput) {
-    const username = extractUsername(rawInput);
-    const resultBlock = document.getElementById("ig-calculator-result");
-
-    if (!username) {
-      if (resultBlock) resultBlock.textContent = "Invalid username format";
-      return;
-    }
-    clearContainer();
-    showLoader(jokesStage1);
-  
-    fetch(`https://eightception.app.n8n.cloud/webhook/068d22da-80c2-4047-8275-08c8db1f3fb3?username=${encodeURIComponent(username)}`)
-      .then(async res => {
-        const raw = await res.text();
-
-        if (!res.ok) {
-          throw new Error(`Request failed: ${res.status} - ${raw}`);
-        }
-
-        try {
-          return JSON.parse(raw);
-        } catch (jsonErr) {
-          throw new Error(`JSON parse error: ${jsonErr.message}\nRaw: ${raw}`);
-        }
-      })
-      .then(async data => {
-        stopLoader();
-        renderHeader(data);
-        showLoader(jokesStage2);
-
-        fetch(`https://eightception.app.n8n.cloud/webhook/f83d85f9-7b2d-4b87-8bd1-aae76ea04efa?account_id=${data.socialAccountId}&request_id=${data.initalRequestId}&scraped_at=${data.scrapedAt}`)
-          .then(async res => {
-            const raw = await res.text();
-
-            if (!res.ok) {
-              throw new Error(`Request failed: ${res.status} - ${raw}`);
-            }
-
-            try {
-              return JSON.parse(raw);
-            } catch (jsonErr) {
-              throw new Error(`JSON parse error: ${jsonErr.message}\nRaw: ${raw}`);
-            }
-          })
-          .catch((err) => {
-            stopLoader();
-            console.error("Request failed", err);
-            alert("Something went wrong. Try again.");
-            return;
-          })
-          .then(showResult);
-      })
-      .catch((err) => {
-        stopLoader();
-        createForm();
-        console.error("Lookup error:", err);
-        alert("Something went wrong during account lookup.");
-      });
+  function formatUSD(val) {
+    if (typeof val !== "number" || isNaN(val)) return "N/A";
+    return "$" + new Intl.NumberFormat("en-US").format(val);
   }
 
-  createForm();
+  function formatPercent(val) {
+    if (typeof val !== "number" || isNaN(val)) return "N/A";
+    return (val * 100).toFixed(2) + "%";
+  }
 });
-
-// Format helpers
-function formatNumber(val) {
-  if (val >= 1_000_000) return (val / 1_000_000).toFixed(1).replace(/\.0$/, '') + "m";
-  if (val >= 1_000) return (val / 1_000).toFixed(1).replace(/\.0$/, '') + "k";
-  return val.toString();
-}
-function formatUSD(val) {
-  if (typeof val !== "number" || isNaN(val)) return "N/A";
-  return "$" + new Intl.NumberFormat("en-US").format(val);
-}
-function formatPercent(val) {
-  if (typeof val !== "number" || isNaN(val)) return "N/A";
-  return (val * 100).toFixed(2) + "%";
-}
