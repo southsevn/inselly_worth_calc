@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       resultContainer.innerHTML = `
         <h4 class="ig-calculator-blur-heading text-align-center">You’ve reached the free limit</h4>
-        <p class="ig-calculator-metrics-subtext">Come back in a few days or enter your email below to unlock more reports.</p>
+        <p class="ig-calculator-metrics-subtext">Leave your email to get full access to your Instagram insights.</p>
       `;
       resultContainer.appendChild(
         renderLeadForm(null, null)
