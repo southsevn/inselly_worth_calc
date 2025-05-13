@@ -1,0 +1,11 @@
+{
+  "name": "inselly-calculator",
+  "version": "1.0.0",
+  "description": "Instagram worth calculator",
+  "scripts": {
+    "minify": "node minify.js"
+  },
+  "dependencies": {
+    "terser": "^5.29.1"
+  }
+} 

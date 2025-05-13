@@ -1,0 +1,16 @@
+{
+  "compress": {
+    "dead_code": true,
+    "drop_console": false,
+    "drop_debugger": true,
+    "pure_funcs": [],
+    "passes": 2
+  },
+  "mangle": {
+    "toplevel": true
+  },
+  "output": {
+    "beautify": false,
+    "comments": false
+  }
+} 
